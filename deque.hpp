@@ -2,8 +2,9 @@
 #define SJTU_DEQUE_HPP
 
 #include "exceptions.hpp"
-
+#include <cassert>
 #include <cstddef>
+#include <iostream>
 
 namespace sjtu {
 template <class T>
@@ -28,6 +29,7 @@ public:
         }
     };
     Node *head, *tail;
+    size_t sz;
 
     /**
      * constructors and destructors
@@ -36,15 +38,14 @@ public:
     double_list()
     {
         head = tail = new Node(nullptr);
+        sz = 0;
     }
     double_list(const double_list<T>& other)
     {
         head = tail = new Node(nullptr);
-        Node* temp = other.head;
-        while (temp != other.tail) {
-            insert_tail(*(temp->val));
-            temp = temp->nxt;
-        }
+        for (const_iterator it = other.cbegin(); it != other.cend(); it++)
+            insert_tail(*it);
+        sz = other.sz;
     }
     ~double_list()
     {
@@ -54,13 +55,10 @@ public:
     {
         if (this == &other)
             return *this;
-        destroy();
-        head = tail = new Node(nullptr);
-        Node* temp = other.head;
-        while (temp != other.tail) {
-            insert_tail(*(temp->val));
-            temp = temp->nxt;
-        }
+        clear();
+        for (const_iterator it = other.cbegin(); it != other.cend(); it++)
+            insert_tail(*it);
+        sz = other.sz;
         return *this;
     }
 
@@ -71,21 +69,35 @@ public:
     class iterator {
     public:
         Node* p;
-        iterator(Node* p = nullptr)
+        const double_list<T>* base;
+        iterator(Node* p = nullptr, const double_list<T>* base = nullptr)
             : p(p)
+            , base(base)
         {
         }
         iterator(const iterator& t)
         {
             p = t.p;
+            base = t.base;
         }
         ~iterator()
         {
             p = nullptr;
+            base = nullptr;
         }
-        Node* at()
+        iterator operator+(const size_t& n) const
         {
-            return p;
+            Node* temp = p;
+            for (size_t i = 0; i < n; i++)
+                temp = temp->nxt;
+            return iterator(temp, base);
+        }
+        iterator operator-(const size_t& n) const
+        {
+            Node* temp = p;
+            for (size_t i = 0; i < n; i++)
+                temp = temp->pre;
+            return iterator(temp, base);
         }
         /**
          * iter++
@@ -96,7 +108,7 @@ public:
                 throw invalid_iterator();
             Node* temp = p;
             p = p->nxt;
-            return iterator(temp);
+            return iterator(temp, base);
         }
         /**
          * ++iter
@@ -117,7 +129,7 @@ public:
                 throw invalid_iterator();
             Node* temp = p;
             p = p->pre;
-            return iterator(temp);
+            return iterator(temp, base);
         }
         /**
          * --iter
@@ -129,19 +141,30 @@ public:
             p = p->pre;
             return *this;
         }
+        T* get() const
+        {
+            if (p == nullptr)
+                throw invalid_iterator();
+            return p->val;
+        }
+        const double_list<T>* get_base() const
+        {
+            return base;
+        }
+
         /**
          * if the iter didn't point to a value
          * throw
          */
         T& operator*() const
         {
-            if (p == nullptr || p->nxt == nullptr)
+            if (p == nullptr)
                 throw invalid_iterator();
             return *(p->val);
         }
         T* operator->() const noexcept
         {
-            if (p == nullptr || p->nxt == nullptr)
+            if (p == nullptr)
                 throw invalid_iterator();
             return p->val;
         }
@@ -150,11 +173,34 @@ public:
          */
         bool operator==(const iterator& rhs) const
         {
-            return p == rhs.p;
+            return p == rhs.p && base == rhs.base;
         }
         bool operator!=(const iterator& rhs) const
         {
-            return p != rhs.p;
+            return p != rhs.p || base != rhs.base;
+        }
+    };
+    class const_iterator : public iterator {
+    public:
+        const_iterator(Node* p = nullptr, const double_list<T>* base = nullptr)
+            : iterator(p, base)
+        {
+        }
+        const_iterator(const iterator& t)
+            : iterator(t)
+        {
+        }
+        const T& operator*() const
+        {
+            if (this->p == nullptr)
+                throw invalid_iterator();
+            return *(this->p->val);
+        }
+        const T* operator->() const noexcept
+        {
+            if (this->p == nullptr)
+                throw invalid_iterator();
+            return this->p->val;
         }
     };
 
@@ -164,11 +210,11 @@ public:
      */
     iterator begin()
     {
-        return iterator(head);
+        return iterator(head, this);
     }
-    iterator begin() const
+    const_iterator cbegin() const
     {
-        return iterator(head);
+        return const_iterator(head, this);
     }
     /**
      * return an iterator point at the last element
@@ -176,9 +222,13 @@ public:
      */
     iterator last()
     {
-        if (tail->pre == nullptr)
-            throw invalid_iterator();
-        return iterator(tail->pre);
+        return iterator(tail->pre, this);
+    }
+    const_iterator clast() const
+    {
+        if (empty())
+            throw container_is_empty();
+        return const_iterator(tail->pre);
     }
     /**
      * return an iterator point at the ending
@@ -186,11 +236,11 @@ public:
      */
     iterator end()
     {
-        return iterator(tail);
+        return iterator(tail, this);
     }
-    iterator end() const
+    const_iterator cend() const
     {
-        return iterator(tail);
+        return const_iterator(tail, this);
     }
 
     /**
@@ -199,7 +249,7 @@ public:
      */
     bool empty() const
     {
-        return head != tail;
+        return head == tail;
     }
     /**
      * destroy the whole double_list
@@ -214,6 +264,7 @@ public:
             temp = temp2;
         }
         delete tail;
+        sz = 0;
         return;
     }
     /**
@@ -224,9 +275,30 @@ public:
     {
         destroy();
         head = tail = new Node(nullptr);
+        sz = 0;
         return;
     }
+    /**
+     * the size of the double_list
+     */
+    size_t size() const
+    {
+        return sz;
+    }
 
+    /* insert an element after iterator pos */
+    iterator insert(iterator pos, const T& val)
+    {
+        if (pos.get_base() != this || pos == end() || pos.p == nullptr)
+            throw invalid_iterator();
+        sz++;
+        Node* cur = new Node(new T(val));
+        cur->nxt = pos.p->nxt;
+        cur->pre = pos.p;
+        pos.p->nxt->pre = cur;
+        pos.p->nxt = cur;
+        return iterator(cur, this);
+    }
     /**
      * erase the element at iterator pos
      * if the iter didn't point to anything, do nothing
@@ -241,33 +313,49 @@ public:
      */
     iterator erase(iterator pos)
     {
-        if (pos == iterator(head)) {
+        if (pos.get_base() != this || pos == end() || pos.p == nullptr)
+            throw invalid_iterator();
+        if (pos == begin()) {
             delete_head();
-            return iterator(head);
+            return begin();
         } else {
+            sz--;
             Node* cur = pos.p;
             cur->pre->nxt = cur->nxt;
             cur->nxt->pre = cur->pre;
-            pos.p = cur->nxt;
+            pos++;
             delete cur;
             return pos;
         }
     }
     /**
+     * get the pos of iterator pos, 0-based
+     */
+    size_t get_pos(iterator pos)
+    {
+        if (pos.get_base() != this)
+            throw invalid_iterator();
+        size_t cnt = 0;
+        auto it = begin();
+        while (it != pos) {
+            cnt++;
+            it++;
+        }
+        if (it == end())
+            throw invalid_iterator();
+        return cnt;
+    }
+
+    /**
      * insert an element at the head of the list
      */
     void insert_head(const T& val)
     {
+        sz++;
         Node* cur = new Node(new T(val));
-        if (head == tail) {
-            cur->nxt = head;
-            cur->nxt->pre = cur;
-            head = cur;
-        } else {
-            cur->nxt = head;
-            cur->nxt->pre = cur;
-            head = cur;
-        }
+        cur->nxt = head;
+        cur->nxt->pre = cur;
+        head = cur;
         return;
     }
     /**
@@ -275,17 +363,10 @@ public:
      */
     void insert_tail(const T& val)
     {
-        Node* cur = new Node(new T(val));
-        if (head == tail) {
-            cur->nxt = tail;
-            cur->nxt->pre = cur;
-            head = cur;
-        } else {
-            cur->nxt = tail;
-            cur->pre = tail->pre;
-            cur->nxt->pre = cur;
-            cur->pre->nxt = cur;
-        }
+        if (empty())
+            insert_head(val);
+        else
+            insert(last(), val);
         return;
     }
     /**
@@ -293,19 +374,13 @@ public:
      */
     void delete_head()
     {
-        if (head == tail)
+        if (empty())
             throw container_is_empty();
+        sz--;
         Node* cur = head;
-        if (cur->nxt == tail) {
-            cur->nxt->pre = nullptr;
-            delete cur;
-            head = tail;
-        } else {
-            Node* tmp = cur->nxt;
-            cur->nxt->pre = nullptr;
-            delete cur;
-            head = tmp;
-        }
+        head = head->nxt;
+        head->pre = nullptr;
+        delete cur;
         return;
     }
     /**
@@ -313,92 +388,81 @@ public:
      */
     void delete_tail()
     {
-        if (head == tail)
+        if (empty())
             throw container_is_empty();
-        Node* cur = tail->pre;
-        if (head->nxt == tail) {
-            cur->nxt->pre = nullptr;
-            delete cur;
-            head = tail;
-        } else {
-            cur->nxt->pre = cur->pre;
-            cur->pre->nxt = cur->nxt;
-            delete cur;
-        }
+        erase(last());
         return;
     }
+    void print() { }
 };
 template <class T>
 class deque {
+private:
+    double_list<double_list<T>>* block;
+    size_t length, sz;
+
 public:
-    static int SIZE = 1e5;
-    size_t size;
-    struct Blocks {
-        double_list<T> list;
-        Blocks *pre, nxt;
-        Blocks(Blocks* pre = nullptr, Blocks* nxt = nullptr)
-            : pre(pre)
-            , nxt(nxt)
-        {
-        }
-    };
-    double_list<Blocks>* blocks;
     class const_iterator;
     class iterator {
-    private:
-        struct Node {
-            double_list<Blocks>::iterator block;
-            double_list<T>::iterator element;
-            Node(double_list<Blocks>::iterator block, double_list<T>::iterator element)
-                : block(block)
-                , element(element)
-            {
-            }
-        };
-        Node* p;
+    public:
         /**
          * add data members.
          * just add whatever you want.
          */
-    public:
+        typename double_list<double_list<T>>::iterator block_it;
+        typename double_list<T>::iterator list_it;
+        const deque* base;
+        iterator() = default;
+        iterator(typename double_list<double_list<T>>::iterator block_it, typename double_list<T>::iterator list_it, const deque* base)
+            : block_it(block_it)
+            , list_it(list_it)
+            , base(base)
+        {
+        }
+        ~iterator() = default;
+        iterator(const iterator& other)
+            : block_it(other.block_it)
+            , list_it(other.list_it)
+            , base(other.base)
+        {
+        }
+        iterator operator=(const iterator& other)
+        {
+            block_it = other.block_it;
+            list_it = other.list_it;
+            base = other.base;
+            return *this;
+        }
+
         /**
          * return a new iterator which points to the n-next element.
          * if there are not enough elements, the behaviour is undefined.
          * same for operator-.
          */
-        iterator()
+        iterator operator+(const size_t& n) const
         {
-            p = nullptr;
-        }
-        iterator(Node* p)
-            : p(p)
-        {
-        }
-        iterator(const iterator& other)
-        {
-            p = other.p;
-        }
-        iterator(double_list<Blocks>::iterator block, double_list<T>::iterator element)
-        {
-            p = new Node(block, element);
-        }
-        ~iterator()
-        {
-            p = nullptr;
-        }
-        iterator operator+(const int& n) const
-        {
-            iterator temp = *this;
-            for (int i = 0; i < n; i++)
+            typename double_list<double_list<T>>::iterator temp = block_it;
+            assert(temp == base->block->begin());
+            size_t cnt = n, pos = temp->get_pos(list_it);
+            while (pos + cnt >= temp->size()) {
+                cnt -= temp->size() - pos;
                 temp++;
-            return temp;
+                pos = 0;
+            }
+            if (temp == base->block->cend())
+                return iterator(temp, nullptr, base);
+            return iterator(temp, temp->begin() + cnt, base);
         }
-        iterator operator-(const int& n) const
+        iterator operator-(const size_t& n) const
         {
-            iterator temp = *this;
-            for (int i = 0; i < n; i++)
+            typename double_list<double_list<T>>::iterator temp = block_it;
+            size_t cnt = n, pos = temp->get_pos(list_it);
+            while (pos - cnt < 0) {
+                cnt -= pos;
                 temp--;
-            return temp;
+                pos = temp->size() - 1;
+            }
+            return iterator(temp, temp->end() - cnt, base);
         }
 
         /**
@@ -408,24 +472,34 @@ public:
          */
         int operator-(const iterator& rhs) const
         {
-            int dis = 0;
-            Node* temp = rhs;
-            while (temp != p) {
-                dis++;
-                temp++;
+            if (base != rhs.base)
+                throw invalid_iterator();
+            size_t lpos = base->block->get_pos(block_it), rpos = rhs.base->block->get_pos(rhs.block_it);
+            if (lpos == rpos)
+                return block_it->get_pos(list_it) - rhs.block_it->get_pos(rhs.list_it);
+            else {
+                bool greater = lpos > rpos;
+                size_t cnt = 0;
+                auto temp = greater ? rhs : *this;
+                while (temp.block_it != (greater ? block_it : rhs.block_it)) {
+                    cnt += temp.block_it->size();
+                    temp.block_it++;
+                }
+                lpos = block_it->get_pos(list_it);
+                rpos = rhs.block_it->get_pos(rhs.list_it);
+                return greater ? cnt + lpos - rpos : cnt + rpos - lpos;
             }
-            return dis;
         }
         iterator& operator+=(const int& n)
         {
-            for (int i = 0; i < n; i++)
-                *this ++;
+            iterator temp = (*this) + n;
+            *this = temp;
             return *this;
         }
         iterator& operator-=(const int& n)
         {
-            for (int i = 0; i < n; i++)
-                *this --;
+            iterator temp = (*this) - n;
+            *this = temp;
             return *this;
         }
 
@@ -435,11 +509,16 @@ public:
         iterator operator++(int)
         {
             iterator temp = *this;
-            if (p->element.at() == p->block.at()->list.last().at()->val) {
-                p->block++;
-                p->element = p->block.at()->list.begin();
+            if (*this == base->clast()) {
+                block_it = base->block->end();
+                list_it = nullptr;
+                return temp;
+            }
+            if (list_it == block_it->last()) {
+                block_it++;
+                list_it = block_it->begin();
             } else
-                p->element++;
+                list_it++;
             return temp;
         }
         /**
@@ -447,11 +526,16 @@ public:
          */
         iterator& operator++()
         {
-            if (p->element.at() == p->block.at()->list.last().at()->val) {
-                p->block++;
-                p->element = p->block.at()->list.begin();
+            if (*this == base->clast()) {
+                block_it = base->block->end();
+                list_it = nullptr;
+                return *this;
+            }
+            if (list_it == block_it->last()) {
+                block_it++;
+                list_it = block_it->begin();
             } else
-                p->element++;
+                list_it++;
             return *this;
         }
         /**
@@ -460,11 +544,11 @@ public:
         iterator operator--(int)
         {
             iterator temp = *this;
-            if (p->element.at() == p->block.at()->list.begin().at()->val) {
-                p->block--;
-                p->element = p->block.at()->list.last();
+            if (list_it == block_it->begin()) {
+                block_it--;
+                list_it = block_it->last();
             } else
-                p->element--;
+                list_it--;
             return temp;
         }
         /**
@@ -472,27 +556,31 @@ public:
          */
         iterator& operator--()
         {
-            if (p->element.at() == p->block.at()->list.begin().at()->val) {
-                p->block--;
-                p->element = p->block.at()->list.last();
+            if (list_it == block_it->begin()) {
+                block_it--;
+                list_it = block_it->last();
             } else
-                p->element--;
+                list_it--;
             return *this;
         }
 
+        T* get() const
+        {
+            return list_it.get();
+        }
         /**
          * *it
          */
         T& operator*() const
         {
-            return *(p->element.at());
+            return *list_it;
         }
         /**
          * it->field
          */
         T* operator->() const noexcept
         {
-            return p->element.at();
+            return list_it.get();
         }
 
         /**
@@ -501,188 +589,44 @@ public:
          */
         bool operator==(const iterator& rhs) const
         {
-            return p == rhs.p;
+            return block_it == rhs.block_it && list_it == rhs.list_it && base == rhs.base;
         }
         bool operator==(const const_iterator& rhs) const
         {
-            return p == rhs.p;
+            return block_it == rhs.block_it && list_it == rhs.list_it && base == rhs.base;
         }
         /**
          * some other operator for iterators.
          */
         bool operator!=(const iterator& rhs) const
         {
-            return p != rhs.p;
+            return block_it != rhs.block_it || list_it != rhs.list_it || base != rhs.base;
         }
         bool operator!=(const const_iterator& rhs) const
         {
-            return p != rhs.p;
+            return block_it != rhs.block_it || list_it != rhs.list_it || base != rhs.base;
         }
     };
 
-    class const_iterator : private iterator {
-    private:
-        /**
-         * it should has similar member method as iterator.
-         * you can copy them, but with care!
-         * and it should be able to be constructed from an iterator.
-         */
+    class const_iterator : public iterator {
     public:
-        const_iterator()
-        {
-            p = nullptr;
-        }
-        const_iterator(Node* p)
-            : p(p)
+        const_iterator() = default;
+        const_iterator(const iterator& t)
+            : iterator(t)
         {
         }
-        const_iterator(const const_iterator& other)
+        const_iterator(typename double_list<double_list<T>>::iterator block_it, typename double_list<T>::iterator list_it, const deque* base)
+            : iterator(block_it, list_it, base)
         {
-            p = other.p;
         }
-        const_iterator(double_list<Blocks>::iterator block, double_list<T>::iterator element)
-        {
-            p = new Node(block, element);
-        }
-        ~const_iterator()
-        {
-            p = nullptr;
-        }
-        const_iterator(iterator& other)
-        {
-            p = other.p;
-        }
-        const_iterator operator+(const int& n) const
-        {
-            const_iterator temp = *this;
-            for (int i = 0; i < n; i++)
-                temp++;
-            return temp;
-        }
-        const_iterator operator-(const int& n) const
-        {
-            const_iterator temp = *this;
-            for (int i = 0; i < n; i++)
-                temp--;
-            return temp;
-        }
-
-        /**
-         * return the distance between two iterators.
-         * if they point to different vectors, throw
-         * invaild_iterator.
-         */
-        int operator-(const iterator& rhs) const
-        {
-            int dis = 0;
-            Node* temp = rhs;
-            while (temp != p) {
-                dis++;
-                temp++;
-            }
-            return dis;
-        }
-        iterator& operator+=(const int& n)
-        {
-            for (int i = 0; i < n; i++)
-                *this ++;
-            return *this;
-        }
-        iterator& operator-=(const int& n)
-        {
-            for (int i = 0; i < n; i++)
-                *this --;
-            return *this;
-        }
-
-        /**
-         * iter++
-         */
-        iterator operator++(int)
-        {
-            iterator temp = *this;
-            if (p->element.at() == p->block.at()->list.last().at()->val) {
-                p->block++;
-                p->element = p->block.at()->list.begin();
-            } else
-                p->element++;
-            return temp;
-        }
-        /**
-         * ++iter
-         */
-        iterator& operator++()
-        {
-            if (p->element.at() == p->block.at()->list.last().at()->val) {
-                p->block++;
-                p->element = p->block.at()->list.begin();
-            } else
-                p->element++;
-            return *this;
-        }
-        /**
-         * iter--
-         */
-        iterator operator--(int)
-        {
-            iterator temp = *this;
-            if (p->element.at() == p->block.at()->list.begin().at()->val) {
-                p->block--;
-                p->element = p->block.at()->list.last();
-            } else
-                p->element--;
-            return temp;
-        }
-        /**
-         * --iter
-         */
-        iterator& operator--()
-        {
-            if (p->element.at() == p->block.at()->list.begin().at()->val) {
-                p->block--;
-                p->element = p->block.at()->list.last();
-            } else
-                p->element--;
-            return *this;
-        }
-
-        /**
-         * *it
-         */
+        ~const_iterator() = default;
         const T& operator*() const
         {
-            return *(p->element.at());
+            return *this->list_it;
         }
-        /**
-         * it->field
-         */
         const T* operator->() const noexcept
         {
-            return p->element.at();
-        }
-
-        /**
-         * check whether two iterators are the same (pointing to the same
-         * memory).
-         */
-        bool operator==(const iterator& rhs) const
-        {
-            return p == rhs.p;
-        }
-        bool operator==(const const_iterator& rhs) const
-        {
-            return p == rhs.p;
-        }
-        /**
-         * some other operator for iterators.
-         */
-        bool operator!=(const iterator& rhs) const
-        {
-            return p != rhs.p;
-        }
-        bool operator!=(const const_iterator& rhs) const
-        {
-            return p != rhs.p;
+            return this->list_it.get();
         }
     };
 
@@ -691,28 +635,26 @@ public:
      */
     deque()
     {
-        blocks = new double_list<Blocks>();
-        size = 0;
+        block = new double_list<double_list<T>>();
+        block->insert_tail(double_list<T>());
+        length = 1;
+        sz = 0;
     }
     deque(const deque& other)
     {
-        destroy();
-        blocks = new double_list<Blocks>();
-        size = other.size;
-        double_list<Blocks>::iterator temp = other.blocks->begin();
-        while (temp != other.blocks->end()) {
-            Blocks* cur = new Blocks();
-            cur->list = temp.at()->list;
-            blocks->insert_tail(*cur);
-            temp++;
-        }
+        block = new double_list<double_list<T>>(*other.block);
+        length = other.length;
+        sz = other.sz;
     }
+
     /**
      * deconstructor.
      */
     ~deque()
     {
-        destroy();
+        delete block;
+        length = 1;
+        sz = 0;
     }
 
     /**
@@ -722,36 +664,33 @@ public:
     {
         if (this == &other)
             return *this;
-        destroy();
-        blocks = new double_list<Blocks>();
-        double_list<Blocks>::iterator temp = other.blocks->begin();
-        while (temp != other.blocks->end()) {
-            Blocks* cur = new Blocks();
-            cur->list = temp.at()->list;
-            blocks->insert_tail(*cur);
-            temp++;
-        }
+        delete block;
+        block = new double_list<double_list<T>>(*other.block);
+        length = other.length;
+        sz = other.sz;
         return *this;
-    }
-    void destroy()
-    {
-        double_list<Blocks>::iterator temp = blocks->begin();
-        while (temp != blocks->end()) {
-            delete temp.at();
-            temp++;
-        }
-        delete blocks;
-        return;
     }
 
     /**
      * access a specified element with bound checking.
      * throw index_out_of_bound if out of bound.
      */
-    T& at(const size_t& pos) { }
-    const T& at(const size_t& pos) const { }
-    T& operator[](const size_t& pos) { }
-    const T& operator[](const size_t& pos) const { }
+    T& at(const size_t& pos)
+    {
+        return *(begin() + pos);
+    }
+    const T& at(const size_t& pos) const
+    {
+        return *(cbegin() + pos);
+    }
+    T& operator[](const size_t& pos)
+    {
+        return at(pos);
+    }
+    const T& operator[](const size_t& pos) const
+    {
+        return at(pos);
+    }
 
     /**
      * access the first element.
@@ -759,9 +698,9 @@ public:
      */
     const T& front() const
     {
-        if (blocks->empty())
+        if (empty())
             throw container_is_empty();
-        return blocks->begin().at()->list.begin().at()->val;
+        return *cbegin();
     }
     /**
      * access the last element.
@@ -769,9 +708,9 @@ public:
      */
     const T& back() const
     {
-        if (blocks->empty())
+        if (empty())
             throw container_is_empty();
-        return blocks->last().at()->list.last().at()->val;
+        return *clast();
     }
 
     /**
@@ -779,11 +718,23 @@ public:
      */
     iterator begin()
     {
-        return iterator(blocks->begin(), blocks->begin().at()->list.begin());
+        return iterator(block->begin(), block->begin()->begin(), this);
     }
     const_iterator cbegin() const
     {
-        return const_iterator(blocks->begin(), blocks->begin().at()->list.begin());
+        return const_iterator(block->begin(), block->begin()->begin(), this);
+    }
+
+    /**
+     * return an iterator to the last element
+     */
+    iterator last()
+    {
+        return iterator(block->last(), block->last()->last(), this);
+    }
+    const_iterator clast() const
+    {
+        return const_iterator(block->last(), block->last()->last(), this);
     }
 
     /**
@@ -791,11 +742,19 @@ public:
      */
     iterator end()
     {
-        return iterator(blocks->end(), blocks->end().at()->list.begin());
+        return iterator(block->end(), nullptr, this);
     }
     const_iterator cend() const
     {
-        return const_iterator(blocks->end(), blocks->end().at()->list.begin());
+        return const_iterator(block->end(), nullptr, this);
+    }
+    void print()
+    {
+        for (auto temp = block->begin(); temp != block->end(); temp++) {
+            for (auto temp2 = temp->begin(); temp2 != temp->end(); temp2++)
+                (*temp2).print();
+            std::cerr << std::endl;
+        }
     }
 
     /**
@@ -803,7 +762,7 @@ public:
      */
     bool empty() const
     {
-        return blocks->empty();
+        return sz == 0;
     }
 
     /**
@@ -811,7 +770,7 @@ public:
      */
     size_t size() const
     {
-        return size;
+        return sz;
     }
 
     /**
@@ -819,10 +778,90 @@ public:
      */
     void clear()
     {
-        destroy();
-        blocks = new double_list<Blocks>();
-        size = 0;
-        return;
+        block->clear();
+        length = 1;
+        sz = 0;
+    }
+
+    /**
+     * split the block at pos
+     */
+    iterator split(iterator pos)
+    {
+        if (pos.block_it->size() <= length)
+            return pos;
+        std::cerr << "split" << std::endl;
+        size_t old_pos = pos.block_it->get_pos(pos.list_it);
+        typename double_list<T>::iterator temp = pos.block_it->begin();
+        typename double_list<double_list<T>>::iterator block1 = block->insert(pos.block_it, double_list<T>());
+        while (block1->size() + 1 <= pos.block_it->size() / 2) {
+            block1->insert_tail(*temp);
+            temp++;
+        }
+        typename double_list<double_list<T>>::iterator block2 = block->insert(block1, double_list<T>());
+        while (temp != pos.block_it->end()) {
+            block2->insert_tail(*temp);
+            temp++;
+        }
+        block->erase(pos.block_it);
+        if (old_pos < block1->size())
+            return iterator(block1, block1->begin() + old_pos, this);
+        else
+            return iterator(block2, block2->begin() + (old_pos - block1->size()), this);
+    }
+    /**
+     * merge the block at pos and the block at pos + 1
+     */
+    iterator merge(iterator pos)
+    {
+        if (pos.block_it == block->last() || pos.block_it->size() + (pos.block_it + 1)->size() > length)
+            return pos;
+        std::cerr << "merge" << std::endl;
+        size_t old_pos = pos.block_it->get_pos(pos.list_it);
+        double_list<T> temp = *pos.block_it;
+        pos.block_it = block->erase(pos.block_it);
+        for (auto it = temp.end() - 1;; it--) {
+            pos.block_it->insert_head(*it);
+            if (it == temp.begin())
+                break;
+        }
+        return iterator(pos.block_it, pos.block_it->begin() + old_pos, this);
+    }
+    /**
+     * reconstruct the block
+     */
+    iterator reconstruct(iterator pos)
+    {
+        if (block->size() <= length && block->size() > length / 4)
+            return pos;
+        std::cerr << "reconstruct" << std::endl;
+        if (block->size() > length)
+            length <<= 1;
+        else
+            length >>= 1;
+        double_list<T> list;
+        size_t new_pos = 0;
+        for (auto temp = block->begin(); temp != block->end(); temp++) {
+            if (temp != pos.block_it)
+                new_pos += temp->size();
+            else
+                new_pos += pos.block_it->get_pos(pos.list_it);
+            for (auto temp2 = temp->begin(); temp2 != temp->end(); temp2++)
+                list.insert_tail(*temp2);
+        }
+        block->clear();
+        size_t cnt = 0;
+        typename double_list<T>::iterator temp = list.begin();
+        while (temp != list.end()) {
+            if (cnt % length == 0)
+                block->insert_tail(double_list<T>());
+            block->last()->insert_tail(*temp);
+            if (cnt == new_pos)
+                pos = iterator(block->last(), block->last()->last(), this);
+            temp++;
+            cnt++;
+        }
+        return pos;
     }
 
     /**
@@ -830,7 +869,16 @@ public:
      * return an iterator pointing to the inserted value.
      * throw if the iterator is invalid or it points to a wrong place.
      */
-    iterator insert(iterator pos, const T& value) { }
+    iterator insert(iterator pos, const T& value)
+    {
+        if (pos == end() || pos.base != this)
+            throw invalid_iterator();
+        sz++;
+        pos.list_it = pos.block_it->insert(pos.list_it, value);
+        pos = split(pos);
+        pos = reconstruct(pos);
+        return pos;
+    }
 
     /**
      * remove the element at pos.
@@ -838,20 +886,39 @@ public:
      * the last element, return end(). throw if the container is empty,
      * the iterator is invalid, or it points to a wrong place.
      */
-    iterator erase(iterator pos) { }
+    iterator erase(iterator pos)
+    {
+        if (pos == end() || pos.base != this)
+            throw invalid_iterator();
+        sz--;
+        if (pos == last()) {
+            pos.list_it = pos.block_it->erase(pos.list_it);
+            if (pos.block_it->empty() && block->size() != 1)
+                block->delete_tail();
+            return end();
+        }
+        pos.list_it = pos.block_it->erase(pos.list_it);
+        if (pos.list_it == pos.block_it->end()) {
+            if (pos.block_it->empty())
+                pos.block_it = block->erase(pos.block_it);
+            else
+                pos.block_it++;
+            pos.list_it = pos.block_it->begin();
+        }
+        pos = merge(pos);
+        pos = reconstruct(pos);
+        return pos;
+    }
 
     /**
      * add an element to the end.
      */
     void push_back(const T& value)
     {
-        if (blocks->empty() || blocks->last()->list.size >= SIZE) {
-            Blocks* cur = new Blocks();
-            cur->list.insert_tail(value);
-            blocks->insert_tail(*cur);
-        }
-        blocks->last()->list.insert_tail(value);
-        size++;
+        if (empty())
+            push_front(value);
+        else
+            insert(last(), value);
         return;
     }
 
@@ -861,12 +928,9 @@ public:
      */
     void pop_back()
     {
-        if (blocks->empty())
+        if (empty())
             throw container_is_empty();
-        blocks->last()->list.delete_tail();
-        size--;
-        if (blocks->last()->list.size == 0)
-            blocks->delete_tail();
+        erase(last());
         return;
     }
 
@@ -875,13 +939,10 @@ public:
      */
     void push_front(const T& value)
     {
-        if (blocks->empty() || blocks->begin()->list.size >= SIZE) {
-            Blocks* cur = new Blocks();
-            cur->list.insert_head(value);
-            blocks->insert_head(*cur);
-        }
-        blocks->begin()->list.insert_head(value);
-        size++;
+        sz++;
+        block->begin()->insert_head(value);
+        split(begin());
+        reconstruct(begin());
         return;
     }
 
@@ -891,12 +952,9 @@ public:
      */
     void pop_front()
     {
-        if (blocks->empty())
+        if (empty())
             throw container_is_empty();
-        blocks->begin()->list.delete_head();
-        size--;
-        if (blocks->begin()->list.size == 0)
-            blocks->delete_head();
+        erase(begin());
         return;
     }
 };

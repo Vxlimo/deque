@@ -29,6 +29,10 @@ public:
     {
         x = y;
     }
+    void print() const
+    {
+        printf("%d ", x);
+    }
 };
 bool operator==(const T& a, const T& b)
 {
@@ -52,6 +56,7 @@ bool equal()
         return 0;
     int cnt = 0;
     for (it_q = q.begin(), it_stl = stl.begin(); it_q != q.end() || it_stl != stl.end(); it_q++, it_stl++) {
+        // std::cerr << cnt << std::endl;
         if (*it_q != *it_stl) {
             printf("cnt = %d\n", cnt);
             return 0;
@@ -102,6 +107,7 @@ void test2()
         puts("Wrong Answer");
         return;
     }
+    q.print();
     for (int i = 1; i <= N; i++) {
         if (i % 10 <= 3)
             q.push_back(T(i)), stl.push_back(T(i));
@@ -111,8 +117,12 @@ void test2()
             q.pop_back(), stl.pop_back();
         else if (i % 10 <= 9)
             q.pop_front(), stl.pop_front();
+        // q.print();
+        // system("read -p 'Press Enter to continue...' var");
+        // std::cout << std::endl;
     }
     flag = 0;
+    std::cerr << flag << std::endl;
     try {
         int t = (q.at(q.size() + 100)).num();
     } catch (...) {

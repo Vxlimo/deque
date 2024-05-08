@@ -2,7 +2,7 @@
 #define SJTU_DEQUE_HPP
 
 #include "exceptions.hpp"
-#include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <iostream>
 
@@ -43,9 +43,9 @@ public:
     double_list(const double_list<T>& other)
     {
         head = tail = new Node(nullptr);
+        sz = 0;
         for (const_iterator it = other.cbegin(); it != other.cend(); it++)
             insert_tail(*it);
-        sz = other.sz;
     }
     ~double_list()
     {
@@ -66,6 +66,7 @@ public:
      * the iterator of double_list
      * directly point to the Node of double_list
      */
+    class const_iterator;
     class iterator {
     public:
         Node* p;
@@ -87,17 +88,17 @@ public:
         }
         iterator operator+(const size_t& n) const
         {
-            Node* temp = p;
+            iterator temp = *this;
             for (size_t i = 0; i < n; i++)
-                temp = temp->nxt;
-            return iterator(temp, base);
+                temp++;
+            return temp;
         }
         iterator operator-(const size_t& n) const
         {
-            Node* temp = p;
+            iterator temp = *this;
             for (size_t i = 0; i < n; i++)
-                temp = temp->pre;
-            return iterator(temp, base);
+                temp--;
+            return temp;
         }
         /**
          * iter++
@@ -179,9 +180,18 @@ public:
         {
             return p != rhs.p || base != rhs.base;
         }
+        bool operator==(const const_iterator& rhs) const
+        {
+            return p == rhs.p && base == rhs.base;
+        }
+        bool operator!=(const const_iterator& rhs) const
+        {
+            return p != rhs.p || base != rhs.base;
+        }
     };
     class const_iterator : public iterator {
     public:
+        const_iterator() = default;
         const_iterator(Node* p = nullptr, const double_list<T>* base = nullptr)
             : iterator(p, base)
         {
@@ -190,6 +200,7 @@ public:
             : iterator(t)
         {
         }
+        ~const_iterator() = default;
         const T& operator*() const
         {
             if (this->p == nullptr)
@@ -197,6 +208,12 @@ public:
             return *(this->p->val);
         }
         const T* operator->() const noexcept
+        {
+            if (this->p == nullptr)
+                throw invalid_iterator();
+            return this->p->val;
+        }
+        const T* get() const
         {
             if (this->p == nullptr)
                 throw invalid_iterator();
@@ -228,7 +245,7 @@ public:
     {
         if (empty())
             throw container_is_empty();
-        return const_iterator(tail->pre);
+        return const_iterator(tail->pre, this);
     }
     /**
      * return an iterator point at the ending
@@ -249,7 +266,7 @@ public:
      */
     bool empty() const
     {
-        return head == tail;
+        return sz == 0;
     }
     /**
      * destroy the whole double_list
@@ -289,14 +306,34 @@ public:
     /* insert an element after iterator pos */
     iterator insert(iterator pos, const T& val)
     {
-        if (pos.get_base() != this || pos == end() || pos.p == nullptr)
+        if (pos.get_base() != this || pos.p == nullptr)
             throw invalid_iterator();
+        if (pos == begin()) {
+            insert_head(val);
+            return begin();
+        }
         sz++;
         Node* cur = new Node(new T(val));
-        cur->nxt = pos.p->nxt;
-        cur->pre = pos.p;
-        pos.p->nxt->pre = cur;
-        pos.p->nxt = cur;
+        cur->nxt = pos.p;
+        cur->pre = pos.p->pre;
+        cur->nxt->pre = cur;
+        cur->pre->nxt = cur;
+        return iterator(cur, this);
+    }
+    iterator insert_ptr(iterator pos, T* val)
+    {
+        if (pos.get_base() != this || pos.p == nullptr)
+            throw invalid_iterator();
+        if (pos == begin()) {
+            insert_head_ptr(val);
+            return begin();
+        }
+        sz++;
+        Node* cur = new Node(val);
+        cur->nxt = pos.p;
+        cur->pre = pos.p->pre;
+        cur->nxt->pre = cur;
+        cur->pre->nxt = cur;
         return iterator(cur, this);
     }
     /**
@@ -333,16 +370,16 @@ public:
      */
     size_t get_pos(iterator pos)
     {
-        if (pos.get_base() != this)
+        if (pos.get_base() != this || pos.p == nullptr)
             throw invalid_iterator();
         size_t cnt = 0;
         auto it = begin();
         while (it != pos) {
             cnt++;
+            if (it == end())
+                break;
             it++;
         }
-        if (it == end())
-            throw invalid_iterator();
         return cnt;
     }
 
@@ -358,15 +395,26 @@ public:
         head = cur;
         return;
     }
+    void insert_head_ptr(T* val)
+    {
+        sz++;
+        Node* cur = new Node(val);
+        cur->nxt = head;
+        cur->nxt->pre = cur;
+        head = cur;
+        return;
+    }
     /**
      * insert an element at the tail of the list
      */
     void insert_tail(const T& val)
     {
-        if (empty())
-            insert_head(val);
-        else
-            insert(last(), val);
+        insert(end(), val);
+        return;
+    }
+    void insert_tail_ptr(T* val)
+    {
+        insert_ptr(end(), val);
         return;
     }
     /**
@@ -393,15 +441,70 @@ public:
         erase(last());
         return;
     }
-    void print() { }
+    std::pair<double_list<T>*, double_list<T>*> split(size_t pos)
+    {
+        double_list<T>* list1 = new double_list<T>();
+        double_list<T>* list2 = new double_list<T>();
+        if (pos == 0) {
+            list2->head = head;
+            delete list2->tail;
+            list2->tail = tail;
+            list2->sz = sz;
+            head = tail = new Node(nullptr);
+            sz = 0;
+            return std::make_pair(list1, list2);
+        }
+        if (pos >= sz) {
+            list1->head = head;
+            delete list1->tail;
+            list1->tail = tail;
+            list1->sz = sz;
+            head = tail = new Node(nullptr);
+            sz = 0;
+            return std::make_pair(list1, list2);
+        }
+        auto it1 = begin() + pos - 1, it2 = begin() + pos;
+        list1->head = head;
+        list1->tail->pre = it1.p;
+        it1.p->nxt = list1->tail;
+        list1->sz = pos;
+        list2->head = it2.p;
+        delete list2->tail;
+        list2->tail = tail;
+        it2.p->pre = nullptr;
+        list2->sz = sz - pos;
+        head = tail = new Node(nullptr);
+        sz = 0;
+        return std::make_pair(list1, list2);
+    }
+    void merge(double_list<T>* list)
+    {
+        if (empty()) {
+            head = list->head;
+            delete tail;
+            tail = list->tail;
+            sz = list->sz;
+            list->head = list->tail = new Node(nullptr);
+            list->sz = 0;
+            return;
+        }
+        auto it = last();
+        it.p->nxt = list->head;
+        list->head->pre = it.p;
+        delete tail;
+        tail = list->tail;
+        sz += list->sz;
+        list->head = list->tail = new Node(nullptr);
+        list->sz = 0;
+        return;
+    }
 };
 template <class T>
 class deque {
-private:
+public:
     double_list<double_list<T>>* block;
     size_t length, sz;
 
-public:
     class const_iterator;
     class iterator {
     public:
@@ -439,30 +542,36 @@ public:
          * if there are not enough elements, the behaviour is undefined.
          * same for operator-.
          */
-        iterator operator+(const size_t& n) const
+        iterator operator+(const int& n) const
         {
+            if (n < 0)
+                return *this - (-n);
             typename double_list<double_list<T>>::iterator temp = block_it;
-            assert(temp == base->block->begin());
-            size_t cnt = n, pos = temp->get_pos(list_it);
-            while (pos + cnt >= temp->size()) {
+            int cnt = n, pos = temp->get_pos(list_it);
+            while (temp != base->block->end() && pos + cnt >= temp->size()) {
                 cnt -= temp->size() - pos;
                 temp++;
                 pos = 0;
             }
-            if (temp == base->block->cend())
-                return iterator(temp, nullptr, base);
-            return iterator(temp, temp->begin() + cnt, base);
+            if (temp == base->block->end()) {
+                if (cnt)
+                    throw invalid_iterator();
+                return base->cend();
+            }
+            return iterator(temp, temp->begin() + (pos + cnt), base);
         }
-        iterator operator-(const size_t& n) const
+        iterator operator-(const int& n) const
         {
+            if (n < 0)
+                return *this + (-n);
             typename double_list<double_list<T>>::iterator temp = block_it;
-            size_t cnt = n, pos = temp->get_pos(list_it);
+            int cnt = n, pos = temp->get_pos(list_it);
             while (pos - cnt < 0) {
-                cnt -= pos;
+                cnt -= (pos + 1);
                 temp--;
                 pos = temp->size() - 1;
             }
-            return iterator(temp, temp->end() - cnt, base);
+            return iterator(temp, temp->begin() + (pos - cnt), base);
         }
 
         /**
@@ -475,11 +584,11 @@ public:
             if (base != rhs.base)
                 throw invalid_iterator();
             size_t lpos = base->block->get_pos(block_it), rpos = rhs.base->block->get_pos(rhs.block_it);
-            if (lpos == rpos)
-                return block_it->get_pos(list_it) - rhs.block_it->get_pos(rhs.list_it);
-            else {
+            if (lpos == rpos) {
+                return (int)block_it->get_pos(list_it) - (int)rhs.block_it->get_pos(rhs.list_it);
+            } else {
                 bool greater = lpos > rpos;
-                size_t cnt = 0;
+                int cnt = 0;
                 auto temp = greater ? rhs : *this;
                 while (temp.block_it != (greater ? block_it : rhs.block_it)) {
                     cnt += temp.block_it->size();
@@ -487,7 +596,7 @@ public:
                 }
                 lpos = block_it->get_pos(list_it);
                 rpos = rhs.block_it->get_pos(rhs.list_it);
-                return greater ? cnt + lpos - rpos : cnt + rpos - lpos;
+                return greater ? cnt + lpos - rpos : -(cnt + rpos - lpos);
             }
         }
         iterator& operator+=(const int& n)
@@ -508,13 +617,10 @@ public:
          */
         iterator operator++(int)
         {
+            if (*this == base->cend())
+                throw invalid_iterator();
             iterator temp = *this;
-            if (*this == base->clast()) {
-                block_it = base->block->end();
-                list_it = nullptr;
-                return temp;
-            }
-            if (list_it == block_it->last()) {
+            if (list_it == block_it->last() && block_it != base->block->last()) {
                 block_it++;
                 list_it = block_it->begin();
             } else
@@ -526,12 +632,9 @@ public:
          */
         iterator& operator++()
         {
-            if (*this == base->clast()) {
-                block_it = base->block->end();
-                list_it = nullptr;
-                return *this;
-            }
-            if (list_it == block_it->last()) {
+            if (*this == base->cend())
+                throw invalid_iterator();
+            if (list_it == block_it->last() && block_it != base->block->last()) {
                 block_it++;
                 list_it = block_it->begin();
             } else
@@ -566,6 +669,8 @@ public:
 
         T* get() const
         {
+            if (*this == base->cend())
+                throw invalid_iterator();
             return list_it.get();
         }
         /**
@@ -573,6 +678,8 @@ public:
          */
         T& operator*() const
         {
+            if (*this == base->cend())
+                throw invalid_iterator();
             return *list_it;
         }
         /**
@@ -580,6 +687,8 @@ public:
          */
         T* operator->() const noexcept
         {
+            if (*this == base->cend())
+                throw invalid_iterator();
             return list_it.get();
         }
 
@@ -620,12 +729,22 @@ public:
         {
         }
         ~const_iterator() = default;
+        const T* get() const
+        {
+            if (*this == this->base->cend())
+                throw invalid_iterator();
+            return this->list_it.get();
+        }
         const T& operator*() const
         {
+            if (*this == this->base->cend())
+                throw invalid_iterator();
             return *this->list_it;
         }
         const T* operator->() const noexcept
         {
+            if (*this == this->base->cend())
+                throw invalid_iterator();
             return this->list_it.get();
         }
     };
@@ -637,7 +756,7 @@ public:
     {
         block = new double_list<double_list<T>>();
         block->insert_tail(double_list<T>());
-        length = 1;
+        length = 200;
         sz = 0;
     }
     deque(const deque& other)
@@ -653,7 +772,7 @@ public:
     ~deque()
     {
         delete block;
-        length = 1;
+        length = 200;
         sz = 0;
     }
 
@@ -675,19 +794,19 @@ public:
      * access a specified element with bound checking.
      * throw index_out_of_bound if out of bound.
      */
-    T& at(const size_t& pos)
+    T& at(const int& pos)
     {
         return *(begin() + pos);
     }
-    const T& at(const size_t& pos) const
+    const T& at(const int& pos) const
     {
         return *(cbegin() + pos);
     }
-    T& operator[](const size_t& pos)
+    T& operator[](const int& pos)
     {
         return at(pos);
     }
-    const T& operator[](const size_t& pos) const
+    const T& operator[](const int& pos) const
     {
         return at(pos);
     }
@@ -742,19 +861,11 @@ public:
      */
     iterator end()
     {
-        return iterator(block->end(), nullptr, this);
+        return iterator(block->last(), block->last()->end(), this);
     }
     const_iterator cend() const
     {
-        return const_iterator(block->end(), nullptr, this);
-    }
-    void print()
-    {
-        for (auto temp = block->begin(); temp != block->end(); temp++) {
-            for (auto temp2 = temp->begin(); temp2 != temp->end(); temp2++)
-                (*temp2).print();
-            std::cerr << std::endl;
-        }
+        return const_iterator(block->last(), block->last()->end(), this);
     }
 
     /**
@@ -778,8 +889,10 @@ public:
      */
     void clear()
     {
-        block->clear();
-        length = 1;
+        delete block;
+        block = new double_list<double_list<T>>();
+        block->insert_tail(double_list<T>());
+        length = 200;
         sz = 0;
     }
 
@@ -790,19 +903,10 @@ public:
     {
         if (pos.block_it->size() <= length)
             return pos;
-        std::cerr << "split" << std::endl;
         size_t old_pos = pos.block_it->get_pos(pos.list_it);
-        typename double_list<T>::iterator temp = pos.block_it->begin();
-        typename double_list<double_list<T>>::iterator block1 = block->insert(pos.block_it, double_list<T>());
-        while (block1->size() + 1 <= pos.block_it->size() / 2) {
-            block1->insert_tail(*temp);
-            temp++;
-        }
-        typename double_list<double_list<T>>::iterator block2 = block->insert(block1, double_list<T>());
-        while (temp != pos.block_it->end()) {
-            block2->insert_tail(*temp);
-            temp++;
-        }
+        auto [temp1, temp2] = pos.block_it->split(pos.block_it->size() / 2);
+        auto block1 = block->insert_ptr(pos.block_it, temp1);
+        auto block2 = block->insert_ptr(pos.block_it, temp2);
         block->erase(pos.block_it);
         if (old_pos < block1->size())
             return iterator(block1, block1->begin() + old_pos, this);
@@ -814,54 +918,62 @@ public:
      */
     iterator merge(iterator pos)
     {
-        if (pos.block_it == block->last() || pos.block_it->size() + (pos.block_it + 1)->size() > length)
-            return pos;
-        std::cerr << "merge" << std::endl;
-        size_t old_pos = pos.block_it->get_pos(pos.list_it);
-        double_list<T> temp = *pos.block_it;
-        pos.block_it = block->erase(pos.block_it);
-        for (auto it = temp.end() - 1;; it--) {
-            pos.block_it->insert_head(*it);
-            if (it == temp.begin())
-                break;
+        if (pos.block_it != block->last() && pos.block_it->size() + (pos.block_it + 1)->size() <= length) {
+            size_t old_pos = pos.block_it->get_pos(pos.list_it);
+            pos.block_it->merge((pos.block_it + 1).get());
+            block->erase(pos.block_it + 1);
+            return iterator(pos.block_it, pos.block_it->begin() + old_pos, this);
         }
-        return iterator(pos.block_it, pos.block_it->begin() + old_pos, this);
+        if (pos.block_it != block->begin() && pos.block_it->size() + (pos.block_it - 1)->size() <= length) {
+            size_t old_pos = (pos.block_it - 1)->size() + pos.block_it->get_pos(pos.list_it);
+            (pos.block_it - 1)->merge(pos.block_it.get());
+            pos.block_it = pos.block_it - 1;
+            block->erase(pos.block_it + 1);
+            return iterator(pos.block_it, pos.block_it->begin() + old_pos, this);
+        }
+        return pos;
     }
     /**
      * reconstruct the block
      */
     iterator reconstruct(iterator pos)
     {
-        if (block->size() <= length && block->size() > length / 4)
+        static size_t last_construct = 0, opts = 0;
+        opts++;
+        if (opts - last_construct > std::min(size(), length * length)) {
+            length = std::sqrt(size()) + 1;
+            if (length < 200)
+                length = 200;
+            last_construct = opts;
+        } else
             return pos;
-        std::cerr << "reconstruct" << std::endl;
-        if (block->size() > length)
-            length <<= 1;
-        else
-            length >>= 1;
-        double_list<T> list;
+        double_list<T>* list = new double_list<T>();
         size_t new_pos = 0;
+        bool flag = false;
         for (auto temp = block->begin(); temp != block->end(); temp++) {
-            if (temp != pos.block_it)
-                new_pos += temp->size();
-            else
-                new_pos += pos.block_it->get_pos(pos.list_it);
-            for (auto temp2 = temp->begin(); temp2 != temp->end(); temp2++)
-                list.insert_tail(*temp2);
+            if (temp != pos.block_it) {
+                if (!flag)
+                    new_pos += temp->size();
+            } else {
+                new_pos += temp->get_pos(pos.list_it);
+                flag = true;
+            }
+            list->merge(temp.get());
         }
-        block->clear();
+        delete block;
+        block = new double_list<double_list<T>>();
         size_t cnt = 0;
-        typename double_list<T>::iterator temp = list.begin();
-        while (temp != list.end()) {
-            if (cnt % length == 0)
-                block->insert_tail(double_list<T>());
-            block->last()->insert_tail(*temp);
-            if (cnt == new_pos)
-                pos = iterator(block->last(), block->last()->last(), this);
-            temp++;
-            cnt++;
+        while (cnt < size()) {
+            auto [temp1, temp2] = list->split(length);
+            delete list;
+            block->insert_tail_ptr(temp1);
+            list = temp2;
+            cnt += temp1->size();
         }
-        return pos;
+        if (list->size() || block->empty())
+            block->insert_tail_ptr(list);
+        delete list;
+        return begin() + new_pos;
     }
 
     /**
@@ -871,7 +983,7 @@ public:
      */
     iterator insert(iterator pos, const T& value)
     {
-        if (pos == end() || pos.base != this)
+        if (pos.base != this)
             throw invalid_iterator();
         sz++;
         pos.list_it = pos.block_it->insert(pos.list_it, value);
@@ -915,10 +1027,7 @@ public:
      */
     void push_back(const T& value)
     {
-        if (empty())
-            push_front(value);
-        else
-            insert(last(), value);
+        insert(end(), value);
         return;
     }
 
@@ -939,10 +1048,7 @@ public:
      */
     void push_front(const T& value)
     {
-        sz++;
-        block->begin()->insert_head(value);
-        split(begin());
-        reconstruct(begin());
+        insert(begin(), value);
         return;
     }
 

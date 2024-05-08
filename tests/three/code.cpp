@@ -1,100 +1,120 @@
 #include "deque.hpp"
 
 #include <ctime>
-#include <iostream>
 #include <deque>
+#include <iostream>
 #include <random>
 #include <string>
 #include <vector>
-#include <ctime>
 
-//std::default_random_engine randnum(time(NULL));
+// std::default_random_engine randnum(time(NULL));
 
 static const int N = 10000;
 static const int N_SPEED = 21000;
 
-typedef std::pair<const char *, std::pair<bool, double> (*)()> CheckerPair;
+typedef std::pair<const char*, std::pair<bool, double> (*)()> CheckerPair;
 
-class Int{
+class Int {
 private:
     int data;
 
 public:
     Int() = default;
-    Int(const int &data) : data(data) {}
-    Int & operator =(const Int &rhs) = default;
-    bool operator <(const Int &rhs) = delete;
-    bool operator >(const Int &rhs) = delete;
-    bool operator <=(const Int &rhs) = delete;
-    bool operator >=(const Int &rhs) = delete;
-    bool operator ==(const Int &rhs)const {
+    Int(const int& data)
+        : data(data)
+    {
+    }
+    Int& operator=(const Int& rhs) = default;
+    bool operator<(const Int& rhs) = delete;
+    bool operator>(const Int& rhs) = delete;
+    bool operator<=(const Int& rhs) = delete;
+    bool operator>=(const Int& rhs) = delete;
+    bool operator==(const Int& rhs) const
+    {
         return data == rhs.data;
     }
-    bool operator !=(const Int &rhs)const {
+    bool operator!=(const Int& rhs) const
+    {
         return data != rhs.data;
     }
-
 };
 
 class DynamicType {
 public:
-    int *pct;
-    double *data;
-    DynamicType (int *p) : pct(p) , data(new double[2]) {
+    int* pct;
+    double* data;
+    DynamicType(int* p)
+        : pct(p)
+        , data(new double[2])
+    {
         (*pct)++;
     }
-    DynamicType (const DynamicType &other) : pct(other.pct), data(new double[2]) {
+    DynamicType(const DynamicType& other)
+        : pct(other.pct)
+        , data(new double[2])
+    {
         (*pct)++;
     }
-    DynamicType &operator =(const DynamicType &other) {
-        if (this == &other) return *this;
+    DynamicType& operator=(const DynamicType& other)
+    {
+        if (this == &other)
+            return *this;
         (*pct)--;
         pct = other.pct;
         (*pct)++;
-        delete [] data;
+        delete[] data;
         data = new double[2];
         return *this;
     }
-    ~DynamicType() {
-        delete [] data;
+    ~DynamicType()
+    {
+        delete[] data;
         (*pct)--;
     }
-    bool operator != (const DynamicType &rhs) const { return false; }
+    bool operator!=(const DynamicType& rhs) const { return false; }
 };
 
-class Timer{
+class Timer {
 private:
     long dfnStart, dfnEnd;
 
 public:
-    void init() {
+    void init()
+    {
         dfnEnd = dfnStart = clock();
     }
-    void stop() {
+    void stop()
+    {
         dfnEnd = clock();
     }
-    double getTime() {
+    double getTime()
+    {
         return 1.0 * (dfnEnd - dfnStart) / CLOCKS_PER_SEC;
     }
-
 };
 
 Timer timer;
 
-bool isEqual(std::deque<Int> &a, sjtu::deque<Int> &b) {
+bool isEqual(std::deque<Int>& a, sjtu::deque<Int>& b)
+{
     static std::vector<Int> resultA, resultB;
     resultA.clear();
     resultB.clear();
-    for (auto x : a) resultA.push_back(x);
-    for (auto x : b) resultB.push_back(x);
-    if (resultA.size() != resultB.size()) return false;
+    for (auto x : a)
+        resultA.push_back(x);
+    for (auto x : b)
+        resultB.push_back(x);
+    if (resultA.size() != resultB.size())
+        return false;
     for (int i = 0; i < (int)resultA.size(); i++) {
-        if (resultA[i] != resultB[i]) return false;
+        if (resultA[i] != resultB[i])
+            return false;
     }
     return true;
 }
 
-std::pair<bool, double> pushBackChecker() {
+std::pair<bool, double> pushBackChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     timer.init();
@@ -111,7 +131,8 @@ std::pair<bool, double> pushBackChecker() {
     }
 }
 
-std::pair<bool, double> pushFrontChecker() {
+std::pair<bool, double> pushFrontChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     timer.init();
@@ -128,7 +149,8 @@ std::pair<bool, double> pushFrontChecker() {
     }
 }
 
-std::pair<bool, double> insertChecker() {
+std::pair<bool, double> insertChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     timer.init();
@@ -146,7 +168,8 @@ std::pair<bool, double> insertChecker() {
     }
 }
 
-std::pair<bool, double> popBackChecker() {
+std::pair<bool, double> popBackChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -168,7 +191,8 @@ std::pair<bool, double> popBackChecker() {
     }
 }
 
-std::pair<bool, double> popFrontChecker() {
+std::pair<bool, double> popFrontChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -190,7 +214,8 @@ std::pair<bool, double> popFrontChecker() {
     }
 }
 
-std::pair<bool, double> eraseChecker() {
+std::pair<bool, double> eraseChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -213,7 +238,8 @@ std::pair<bool, double> eraseChecker() {
     }
 }
 
-std::pair<bool, double> atChecker() {
+std::pair<bool, double> atChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -232,7 +258,8 @@ std::pair<bool, double> atChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> constAtChecker() {
+std::pair<bool, double> constAtChecker()
+{
     std::deque<Int> basea;
     sjtu::deque<Int> baseb;
     for (int i = 0; i < N; i++) {
@@ -253,7 +280,8 @@ std::pair<bool, double> constAtChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> bracketChecker() {
+std::pair<bool, double> bracketChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -272,7 +300,8 @@ std::pair<bool, double> bracketChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> constBracketChecker() {
+std::pair<bool, double> constBracketChecker()
+{
     std::deque<Int> basea;
     sjtu::deque<Int> baseb;
     for (int i = 0; i < N; i++) {
@@ -293,7 +322,8 @@ std::pair<bool, double> constBracketChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> frontChecker() {
+std::pair<bool, double> frontChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     timer.init();
@@ -310,7 +340,8 @@ std::pair<bool, double> frontChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> backChecker() {
+std::pair<bool, double> backChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     timer.init();
@@ -327,7 +358,8 @@ std::pair<bool, double> backChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> iteratorAddNChecker() {
+std::pair<bool, double> iteratorAddNChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -358,7 +390,8 @@ std::pair<bool, double> iteratorAddNChecker() {
     }
 }
 
-std::pair<bool, double> iteratorRedNChecker() {
+std::pair<bool, double> iteratorRedNChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -391,7 +424,8 @@ std::pair<bool, double> iteratorRedNChecker() {
     }
 }
 
-std::pair<bool, double> iteratorAddENChecker() {
+std::pair<bool, double> iteratorAddENChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -422,7 +456,8 @@ std::pair<bool, double> iteratorAddENChecker() {
     }
 }
 
-std::pair<bool, double> iteratorRedENChecker() {
+std::pair<bool, double> iteratorRedENChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -455,7 +490,8 @@ std::pair<bool, double> iteratorRedENChecker() {
     }
 }
 
-std::pair<bool, double> iteratorPAddOneChecker() {
+std::pair<bool, double> iteratorPAddOneChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -483,7 +519,8 @@ std::pair<bool, double> iteratorPAddOneChecker() {
     }
 }
 
-std::pair<bool, double> iteratorPRedOneChecker() {
+std::pair<bool, double> iteratorPRedOneChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -494,7 +531,7 @@ std::pair<bool, double> iteratorPRedOneChecker() {
     }
     timer.init();
     auto itB = --b.end(), tB = itB;
-    for (auto itA = --a.end(), tA = itA; ; tA = --itA, tB = --itB) {
+    for (auto itA = --a.end(), tA = itA;; tA = --itA, tB = --itB) {
         if (*itA != *itB) {
             return std::make_pair(false, 0);
         }
@@ -502,7 +539,8 @@ std::pair<bool, double> iteratorPRedOneChecker() {
             return std::make_pair(false, 0);
         }
         *tA = *tB = rand();
-        if (itA == a.begin()) break;
+        if (itA == a.begin())
+            break;
     }
     timer.stop();
     if (!isEqual(a, b)) {
@@ -512,7 +550,8 @@ std::pair<bool, double> iteratorPRedOneChecker() {
     }
 }
 
-std::pair<bool, double> iteratorSAddOneChecker() {
+std::pair<bool, double> iteratorSAddOneChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -540,7 +579,8 @@ std::pair<bool, double> iteratorSAddOneChecker() {
     }
 }
 
-std::pair<bool, double> iteratorSRedOneChecker() {
+std::pair<bool, double> iteratorSRedOneChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -554,7 +594,7 @@ std::pair<bool, double> iteratorSRedOneChecker() {
     auto itA = a.end(), tA = itA;
     tB = itB--;
     tA = itA--;
-    for (; ; tA = itA--, tB = itB--) {
+    for (;; tA = itA--, tB = itB--) {
         if (*itA != *itB) {
             return std::make_pair(false, 0);
         }
@@ -562,7 +602,8 @@ std::pair<bool, double> iteratorSRedOneChecker() {
             return std::make_pair(false, 0);
         }
         *itA = *itB = rand();
-        if (itA == a.begin()) break;
+        if (itA == a.begin())
+            break;
     }
     timer.stop();
     if (!isEqual(a, b)) {
@@ -572,7 +613,8 @@ std::pair<bool, double> iteratorSRedOneChecker() {
     }
 }
 
-std::pair<bool, double> iteratorMinusOperatorChecker() {
+std::pair<bool, double> iteratorMinusOperatorChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     for (int i = 0; i < N; i++) {
@@ -585,8 +627,10 @@ std::pair<bool, double> iteratorMinusOperatorChecker() {
     auto itA1 = a.begin(), itA2 = a.begin();
     auto itB1 = b.begin(), itB2 = b.begin();
     int tmp1 = rand() % (a.size() + 1), tmp2 = rand() % (a.size() + 1);
-    for (int i = 0; i < tmp1; i++) itA1++, itB1++;
-    for (int i = 0; i < tmp2; i++) itA2++, itB2++;
+    for (int i = 0; i < tmp1; i++)
+        itA1++, itB1++;
+    for (int i = 0; i < tmp2; i++)
+        itA2++, itB2++;
     if (itA2 - itA1 != itB2 - itB1) {
         return std::make_pair(false, 0);
     }
@@ -600,7 +644,8 @@ std::pair<bool, double> iteratorMinusOperatorChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> errorBracketChecker() {
+std::pair<bool, double> errorBracketChecker()
+{
     sjtu::deque<Int> a;
     for (int i = 0; i < N; i++) {
         int pos = rand() % (a.size() + 1);
@@ -609,14 +654,14 @@ std::pair<bool, double> errorBracketChecker() {
     }
     int successCounter = 0;
     timer.init();
-    try{
+    try {
         a[a.size()] = 0;
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
-    try{
+    try {
         a[-1] = 0;
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
     timer.stop();
@@ -627,7 +672,8 @@ std::pair<bool, double> errorBracketChecker() {
     }
 }
 
-std::pair<bool, double> errorAtChecker() {
+std::pair<bool, double> errorAtChecker()
+{
     sjtu::deque<Int> a;
     for (int i = 0; i < N; i++) {
         int pos = rand() % (a.size() + 1);
@@ -636,14 +682,14 @@ std::pair<bool, double> errorAtChecker() {
     }
     int successCounter = 0;
     timer.init();
-    try{
+    try {
         a.at(a.size()) = 0;
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
-    try{
+    try {
         a.at(-1) = 0;
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
     timer.stop();
@@ -654,7 +700,8 @@ std::pair<bool, double> errorAtChecker() {
     }
 }
 
-std::pair<bool, double> errorIteratorChecker() {
+std::pair<bool, double> errorIteratorChecker()
+{
     sjtu::deque<Int> a;
     for (int i = 0; i < N; i++) {
         int pos = rand() % (a.size() + 1);
@@ -663,19 +710,19 @@ std::pair<bool, double> errorIteratorChecker() {
     }
     int successCounter = 0;
     timer.init();
-    try{
+    try {
         *a.end() = 0;
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
-    try{
+    try {
         *--a.begin();
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
-    try{
+    try {
         *++a.end();
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
     timer.stop();
@@ -684,10 +731,10 @@ std::pair<bool, double> errorIteratorChecker() {
     } else {
         return std::make_pair(false, 0);
     }
-
 }
 
-std::pair<bool, double> errorInsertChecker() {
+std::pair<bool, double> errorInsertChecker()
+{
     sjtu::deque<Int> a, b;
     for (int i = 0; i < N; i++) {
         int tmp = rand();
@@ -695,19 +742,19 @@ std::pair<bool, double> errorInsertChecker() {
     }
     int successCounter = 0;
     timer.init();
-    try{
+    try {
         b.insert(a.begin(), 0);
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
-    try{
+    try {
         b.insert(a.end(), 0);
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
-    try{
+    try {
         b.insert(a.begin() + N / 2, 0);
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
     timer.stop();
@@ -718,7 +765,8 @@ std::pair<bool, double> errorInsertChecker() {
     }
 }
 
-std::pair<bool, double> errorEraseChecker() {
+std::pair<bool, double> errorEraseChecker()
+{
     sjtu::deque<Int> a, b;
     for (int i = 0; i < N; i++) {
         int tmp = rand();
@@ -726,24 +774,24 @@ std::pair<bool, double> errorEraseChecker() {
     }
     int successCounter = 0;
     timer.init();
-    try{
+    try {
         b.erase(a.begin());
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
-    try{
+    try {
         b.erase(a.end());
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
-    try{
+    try {
         b.erase(a.begin() + N / 2);
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
-    try{
+    try {
         b.erase(b.end());
-    } catch(...) {
+    } catch (...) {
         successCounter++;
     }
     timer.stop();
@@ -754,7 +802,8 @@ std::pair<bool, double> errorEraseChecker() {
     }
 }
 
-std::pair<bool, double> sizeChecker() {
+std::pair<bool, double> sizeChecker()
+{
     sjtu::deque<Int> a;
     std::deque<Int> b;
     timer.init();
@@ -770,7 +819,8 @@ std::pair<bool, double> sizeChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> emptyChecker() {
+std::pair<bool, double> emptyChecker()
+{
     sjtu::deque<Int> a;
     std::deque<Int> b;
     timer.init();
@@ -786,7 +836,8 @@ std::pair<bool, double> emptyChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> copyConstructorChecker() {
+std::pair<bool, double> copyConstructorChecker()
+{
     std::deque<DynamicType> a;
     sjtu::deque<DynamicType> b;
     timer.init();
@@ -825,7 +876,8 @@ std::pair<bool, double> copyConstructorChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> equalOperatorChecker() {
+std::pair<bool, double> equalOperatorChecker()
+{
     std::deque<DynamicType> a;
     sjtu::deque<DynamicType> b;
     timer.init();
@@ -859,34 +911,35 @@ std::pair<bool, double> equalOperatorChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> memoryLeakChecker() {
-    sjtu::deque<DynamicType> *a = new sjtu::deque<DynamicType>;
+std::pair<bool, double> memoryLeakChecker()
+{
+    sjtu::deque<DynamicType>* a = new sjtu::deque<DynamicType>;
     int srcCounter = 0;
     timer.init();
     for (int i = 0; i < N; i++) {
-        a -> push_back(DynamicType(&srcCounter));
-        a -> insert(a -> begin() + rand() % (a -> size() + 1), DynamicType(&srcCounter));
-        a -> push_front(DynamicType(&srcCounter));
+        a->push_back(DynamicType(&srcCounter));
+        a->insert(a->begin() + rand() % (a->size() + 1), DynamicType(&srcCounter));
+        a->push_front(DynamicType(&srcCounter));
     }
-    a -> clear();
+    a->clear();
     if (srcCounter != 0) {
         return std::make_pair(false, 0);
     }
     for (int i = 0; i < N; i++) {
-        a -> push_back(DynamicType(&srcCounter));
-        a -> insert(a -> begin() + rand() % (a -> size() + 1), DynamicType(&srcCounter));
-        a -> push_front(DynamicType(&srcCounter));
+        a->push_back(DynamicType(&srcCounter));
+        a->insert(a->begin() + rand() % (a->size() + 1), DynamicType(&srcCounter));
+        a->push_front(DynamicType(&srcCounter));
     }
     for (int i = 0; i < 3 * N; i++) {
-        a -> pop_front();
+        a->pop_front();
     }
     if (srcCounter != 0) {
         return std::make_pair(false, 0);
     }
     for (int i = 0; i < N; i++) {
-        a -> push_back(DynamicType(&srcCounter));
-        a -> insert(a -> begin() + rand() % (a -> size() + 1), DynamicType(&srcCounter));
-        a -> push_front(DynamicType(&srcCounter));
+        a->push_back(DynamicType(&srcCounter));
+        a->insert(a->begin() + rand() % (a->size() + 1), DynamicType(&srcCounter));
+        a->push_front(DynamicType(&srcCounter));
     }
     delete a;
     if (srcCounter != 0) {
@@ -896,7 +949,8 @@ std::pair<bool, double> memoryLeakChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> synthesisChecker() {
+std::pair<bool, double> synthesisChecker()
+{
     std::deque<Int> a, tA(a), ttA(tA);
     sjtu::deque<Int> b, tB(b), ttB(tB);
 
@@ -909,11 +963,13 @@ std::pair<bool, double> synthesisChecker() {
     if (!isEqual(tA, tB)) {
         return std::make_pair(false, 0);
     }
-    tA = ttA; tB = ttB;
+    tA = ttA;
+    tB = ttB;
     if (!isEqual(tA, tB)) {
         return std::make_pair(false, 0);
     }
-    tA = a = a; tB = b = b;
+    tA = a = a;
+    tB = b = b;
     if (!isEqual(tA, tB)) {
         return std::make_pair(false, 0);
     }
@@ -1059,7 +1115,8 @@ std::pair<bool, double> synthesisChecker() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> iteratorInsertPersistenceChecker() {
+std::pair<bool, double> iteratorInsertPersistenceChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     std::deque<Int>::iterator itA;
@@ -1108,7 +1165,8 @@ std::pair<bool, double> iteratorInsertPersistenceChecker() {
     }
 }
 
-std::pair<bool, double> iteratorErasePersistenceChecker() {
+std::pair<bool, double> iteratorErasePersistenceChecker()
+{
     std::deque<Int> a;
     sjtu::deque<Int> b;
     timer.init();
@@ -1202,7 +1260,8 @@ static CheckerPair TEST_A[] = {
     std::make_pair("Synthesis Series -> Comprehensive testing...", synthesisChecker)
 };
 
-std::pair<bool, double> pushBackTimer() {
+std::pair<bool, double> pushBackTimer()
+{
     sjtu::deque<int> a;
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1212,13 +1271,17 @@ std::pair<bool, double> pushBackTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> popBackTimer() {
+std::pair<bool, double> popBackTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1228,7 +1291,8 @@ std::pair<bool, double> popBackTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> pushFrontTimer() {
+std::pair<bool, double> pushFrontTimer()
+{
     sjtu::deque<int> a;
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1238,13 +1302,17 @@ std::pair<bool, double> pushFrontTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> popFrontTimer() {
+std::pair<bool, double> popFrontTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1254,13 +1322,17 @@ std::pair<bool, double> popFrontTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> frontTimer() {
+std::pair<bool, double> frontTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1270,13 +1342,17 @@ std::pair<bool, double> frontTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> backTimer() {
+std::pair<bool, double> backTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1286,13 +1362,17 @@ std::pair<bool, double> backTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> beginTimer() {
+std::pair<bool, double> beginTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1302,13 +1382,17 @@ std::pair<bool, double> beginTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> endTimer() {
+std::pair<bool, double> endTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1318,13 +1402,17 @@ std::pair<bool, double> endTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> iteratorAddOneTimer() {
+std::pair<bool, double> iteratorAddOneTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     auto itA = a.begin();
     timer.init();
@@ -1335,13 +1423,17 @@ std::pair<bool, double> iteratorAddOneTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> iteratorRedOneTimer() {
+std::pair<bool, double> iteratorRedOneTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     auto itA = a.end();
     timer.init();
@@ -1352,13 +1444,17 @@ std::pair<bool, double> iteratorRedOneTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> iteratorAddNTimer() {
+std::pair<bool, double> iteratorAddNTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     auto itA = a.begin();
     timer.init();
@@ -1369,13 +1465,17 @@ std::pair<bool, double> iteratorAddNTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> iteratorRedNTimer() {
+std::pair<bool, double> iteratorRedNTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     auto itA = a.end();
     timer.init();
@@ -1386,7 +1486,8 @@ std::pair<bool, double> iteratorRedNTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> insertTimer() {
+std::pair<bool, double> insertTimer()
+{
     sjtu::deque<int> a;
     timer.init();
     auto itA = a.begin();
@@ -1397,13 +1498,17 @@ std::pair<bool, double> insertTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> eraseTimer() {
+std::pair<bool, double> eraseTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1413,13 +1518,17 @@ std::pair<bool, double> eraseTimer() {
     return std::make_pair(true, timer.getTime());
 }
 
-std::pair<bool, double> copyConstructorTimer() {
+std::pair<bool, double> copyConstructorTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     sjtu::deque<int> b(a), c(b), d(c);
@@ -1427,13 +1536,17 @@ std::pair<bool, double> copyConstructorTimer() {
     return std::make_pair(true, timer.getTime() / 3);
 }
 
-std::pair<bool, double> equalOperatorTimer() {
+std::pair<bool, double> equalOperatorTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     sjtu::deque<int> b, c, d;
@@ -1444,13 +1557,17 @@ std::pair<bool, double> equalOperatorTimer() {
     return std::make_pair(true, timer.getTime() / 3);
 }
 
-std::pair<bool, double> atTimer() {
+std::pair<bool, double> atTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1460,13 +1577,17 @@ std::pair<bool, double> atTimer() {
     return std::make_pair(true, timer.getTime() / 3);
 }
 
-std::pair<bool, double> bracketTimer() {
+std::pair<bool, double> bracketTimer()
+{
     sjtu::deque<int> a;
     for (int i = 0; i < N_SPEED; i++) {
         int op = rand() % 3;
-        if (op == 0) a.push_back(rand());
-        else if (op == 1) a.push_front(rand());
-        else if (op == 2) a.insert(a.begin() + rand() % (a.size() + 1), rand());
+        if (op == 0)
+            a.push_back(rand());
+        else if (op == 1)
+            a.push_front(rand());
+        else if (op == 2)
+            a.insert(a.begin() + rand() % (a.size() + 1), rand());
     }
     timer.init();
     for (int i = 0; i < N_SPEED; i++) {
@@ -1501,7 +1622,8 @@ static CheckerPair TEST_B[] = {
 #define __SPEED_TEST
 #define __OFFICAL
 
-int main() {
+int main()
+{
 #ifndef __OFFICAL
     puts("Deque CheckTool Package Version 1.5");
     puts("PAY SPECIAL ATTENTION: We assume your iterator is correct!!!");
@@ -1511,7 +1633,7 @@ int main() {
     puts("");
 #ifdef __CORRECT_TEST
     puts("---------------------------------------------------------------------------");
-    try{
+    try {
         puts("Test Zone A: Correctness Testing...");
         int n = sizeof(TEST_A) / sizeof(CheckerPair);
         for (int i = 0; i < n; i++) {
@@ -1523,7 +1645,7 @@ int main() {
                 puts("FAILED");
             }
         }
-    } catch(...) {
+    } catch (...) {
         puts("Unknown Error Occured");
     }
     puts("---------------------------------------------------------------------------");
@@ -1534,7 +1656,7 @@ int main() {
 
 #ifdef __SPEED_TEST
     puts("---------------------------------------------------------------------------");
-    try{
+    try {
         puts("Test Zone B: Operation speed individually Testing...");
         printf("Test Size: %d Element(s)\n", N_SPEED);
         Timer global;
@@ -1557,7 +1679,7 @@ int main() {
         printf("Total usage: %.2fs\n", global.getTime());
 #endif
 #endif
-    } catch(...) {
+    } catch (...) {
         puts("Unknown Error Occured");
     }
     puts("---------------------------------------------------------------------------");

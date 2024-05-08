@@ -1,23 +1,23 @@
-//Provided by desire2020/Steve Lu
+// Provided by desire2020/Steve Lu
 
 /***********************************************************************
 Hint: This test case almost completely tests the correctness of your deque.
 So if all tests are passed, feel free to enhance your performance! :)
 Yours Sincerely. Rabbit.
 ***********************************************************************/
+#include "class-bint.hpp"
 #include "class-integer.hpp"
 #include "class-matrix.hpp"
-#include "class-bint.hpp"
+#include "deque.hpp"
+#include <deque>
 #include <iostream>
 #include <vector>
-#include <deque>
-#include "deque.hpp"
 
-long long randNum(long long x,long long maxNum)
+long long randNum(long long x, long long maxNum)
 {
     x = (x * 10007) % maxNum;
     return x + 1;
-} 
+}
 const size_t N = 10005LL;
 
 void error()
@@ -63,7 +63,7 @@ void TestBint()
     sjtu::deque<Util::Bint> dBint;
     std::vector<Util::Bint> vBint;
     for (long long i = 1LL << 50; i < (1LL << 50) + N; ++i) {
-        vBint.push_back(Util::Bint(i) * randNum(i, (1 << 25) ));
+        vBint.push_back(Util::Bint(i) * randNum(i, (1 << 25)));
         dBint.push_back(vBint.back());
     }
 
@@ -77,24 +77,22 @@ void TestBint()
 void TestCopyConstructorAndOperatorEqu()
 {
     std::cout << "Test 4 : Test for copy constructor and operator=...";
-    sjtu::deque<long long> *pInt;
+    sjtu::deque<long long>* pInt;
     pInt = new sjtu::deque<long long>;
     for (long long i = 0; i < N; ++i) {
-        pInt -> push_back(i);
+        pInt->push_back(i);
     }
-    sjtu::deque<long long> &dInt = *pInt;
+    sjtu::deque<long long>& dInt = *pInt;
     sjtu::deque<long long> dualInt(dInt);
     sjtu::deque<long long> dualInt_oper;
     dualInt_oper = dInt;
-    for (long long i = 0; i < N; ++i)
-    {
+    for (long long i = 0; i < N; ++i) {
         if (dualInt[i] != dInt[i] || dualInt_oper[i] != dInt[i])
             error();
     }
     dualInt_oper = dualInt_oper;
     delete pInt;
-    for (long long i = 0; i < N; ++i)
-    {
+    for (long long i = 0; i < N; ++i) {
         if (dualInt_oper[i] != dualInt[i])
             error();
     }
@@ -108,7 +106,7 @@ void TestIteratorSequenceAccess()
     for (long long i = 0; i < N; ++i) {
         dInt.push_back(i);
     }
-    sjtu::deque<long long> :: iterator it;
+    sjtu::deque<long long>::iterator it;
     it = dInt.begin();
     for (long long i = 0; i < N; ++i) {
         if (!(*it == dInt[i]))
@@ -166,28 +164,23 @@ void TestPopAndPush()
     sjtu::deque<long long> dInt, drInt;
     std::vector<long long> vInt;
     std::vector<long long> rInt;
-    for (size_t i = 0; i < 1114LL; ++i)
-    {
+    for (size_t i = 0; i < 1114LL; ++i) {
         dInt.push_back(i);
         vInt.push_back(i);
     }
-    for (size_t i = 0; i < 107LL; ++i)
-    {
+    for (size_t i = 0; i < 107LL; ++i) {
         dInt.pop_back();
         vInt.pop_back();
     }
-    for (size_t i = 0; i < 1114LL; ++i)
-    {
+    for (size_t i = 0; i < 1114LL; ++i) {
         drInt.push_front(i);
         rInt.push_back(i);
     }
-    for (size_t i = 0; i < 107LL; ++i)
-    {
+    for (size_t i = 0; i < 107LL; ++i) {
         drInt.pop_front();
         rInt.pop_back();
     }
-    for (size_t i = 0; i < 1007LL; ++i)
-    {
+    for (size_t i = 0; i < 1007LL; ++i) {
         if (!(dInt[i] == vInt[i]))
             error();
         if (!(drInt[1006LL - i] == rInt[i]))
@@ -195,7 +188,6 @@ void TestPopAndPush()
     }
 
     std::cout << "Correct." << std::endl;
-
 }
 
 int main()

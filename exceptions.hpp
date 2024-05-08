@@ -3,6 +3,7 @@
 
 #include <cstddef>
 #include <cstring>
+#include <iostream>
 #include <string>
 
 /*
@@ -15,10 +16,16 @@ class exception {
 protected:
     const std::string variant = "";
     std::string detail = "";
+
 public:
-    exception() {}
-    exception(const exception &ec) : variant(ec.variant), detail(ec.detail) {}
-    virtual std::string what() {
+    exception() { }
+    exception(const exception& ec)
+        : variant(ec.variant)
+        , detail(ec.detail)
+    {
+    }
+    virtual std::string what()
+    {
         return variant + " " + detail;
     }
 };

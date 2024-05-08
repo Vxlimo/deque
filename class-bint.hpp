@@ -1,9 +1,9 @@
-#include <string>
-#include <iostream>
-#include <cstring>
 #include <cstdlib>
-#include <vector>
+#include <cstring>
+#include <iostream>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 namespace Util {
 
@@ -20,56 +20,63 @@ class Bint {
     };
     bool isMinus = false;
     size_t length;
-    int *data = nullptr;
+    int* data = nullptr;
     size_t capacity = MIN_CAPACITY;
     void _DoubleSpace();
-    void _SafeNewSpace(int *&p, const size_t &len);
-    explicit Bint(const size_t &capa);
+    void _SafeNewSpace(int*& p, const size_t& len);
+    explicit Bint(const size_t& capa);
+
 public:
     Bint();
     Bint(int x);
     Bint(long long x);
     Bint(std::string x);
-    Bint(const Bint &b);
-    Bint(Bint &&b) noexcept;
+    Bint(const Bint& b);
+    Bint(Bint&& b) noexcept;
 
-    Bint &operator=(int rhs);
-    Bint &operator=(long long rhs);
-    Bint &operator=(const Bint &rhs);
-    Bint &operator=(Bint &&rhs) noexcept;
+    Bint& operator=(int rhs);
+    Bint& operator=(long long rhs);
+    Bint& operator=(const Bint& rhs);
+    Bint& operator=(Bint&& rhs) noexcept;
 
-    friend Bint abs(const Bint &x);
-    friend Bint abs(Bint &&x);
+    friend Bint abs(const Bint& x);
+    friend Bint abs(Bint&& x);
 
-    friend bool operator==(const Bint &lhs, const Bint &rhs);
-    friend bool operator!=(const Bint &lhs, const Bint &rhs);
-    friend bool operator<(const Bint &lhs, const Bint &rhs);
-    friend bool operator>(const Bint &lhs, const Bint &rhs);
-    friend bool operator<=(const Bint &lhs, const Bint &rhs);
-    friend bool operator>=(const Bint &lhs, const Bint &rhs);
+    friend bool operator==(const Bint& lhs, const Bint& rhs);
+    friend bool operator!=(const Bint& lhs, const Bint& rhs);
+    friend bool operator<(const Bint& lhs, const Bint& rhs);
+    friend bool operator>(const Bint& lhs, const Bint& rhs);
+    friend bool operator<=(const Bint& lhs, const Bint& rhs);
+    friend bool operator>=(const Bint& lhs, const Bint& rhs);
 
-    friend Bint operator+(const Bint &lhs, const Bint &rhs);
-    friend Bint operator-(const Bint &b);
-    friend Bint operator-(Bint &&b);
-    friend Bint operator-(const Bint &lhs, const Bint &rhs);
-    friend Bint operator*(const Bint &lhs, const Bint &rhs);
+    friend Bint operator+(const Bint& lhs, const Bint& rhs);
+    friend Bint operator-(const Bint& b);
+    friend Bint operator-(Bint&& b);
+    friend Bint operator-(const Bint& lhs, const Bint& rhs);
+    friend Bint operator*(const Bint& lhs, const Bint& rhs);
 
-    friend std::istream &operator>>(std::istream &is, Bint &b);
-    friend std::ostream &operator<<(std::ostream &os, const Bint &b);
+    friend std::istream& operator>>(std::istream& is, Bint& b);
+    friend std::ostream& operator<<(std::ostream& os, const Bint& b);
 
     ~Bint();
 };
 }
 
-#include <iomanip>
 #include <algorithm>
+#include <iomanip>
 
 namespace Util {
 
-Bint::NewSpaceFailed::NewSpaceFailed() : std::runtime_error("No Enough Memory Space.") {}
-Bint::BadCast::BadCast() : std::invalid_argument("Cannot convert to a Bint object") {}
+Bint::NewSpaceFailed::NewSpaceFailed()
+    : std::runtime_error("No Enough Memory Space.")
+{
+}
+Bint::BadCast::BadCast()
+    : std::invalid_argument("Cannot convert to a Bint object")
+{
+}
 
-void Bint::_SafeNewSpace(int *&p, const size_t &len)
+void Bint::_SafeNewSpace(int*& p, const size_t& len)
 {
     if (p != nullptr) {
         delete[] p;
@@ -84,7 +91,7 @@ void Bint::_SafeNewSpace(int *&p, const size_t &len)
 
 void Bint::_DoubleSpace()
 {
-    int *newMem = nullptr;
+    int* newMem = nullptr;
     _SafeNewSpace(newMem, capacity << 1);
     memcpy(newMem, data, capacity * sizeof(int));
     delete[] data;
@@ -132,7 +139,7 @@ Bint::Bint(long long x)
     }
 }
 
-Bint::Bint(const size_t &capa)
+Bint::Bint(const size_t& capa)
     : length(1)
 {
     while (capacity < capa) {
@@ -158,7 +165,7 @@ Bint::Bint(std::string x)
         std::swap(x[i], x[x.length() - 1 - i]);
     }
 
-    const static unsigned int pow10[4] = {1, 10, 100, 1000};
+    const static unsigned int pow10[4] = { 1, 10, 100, 1000 };
     for (size_t i = 0; i < capacity; ++i) {
         if ((i << 2) >= x.length()) {
             length = i;
@@ -176,21 +183,25 @@ Bint::Bint(std::string x)
     }
 }
 
-Bint::Bint(const Bint &b)
-    : isMinus(b.isMinus), length(b.length), capacity(b.capacity)
+Bint::Bint(const Bint& b)
+    : isMinus(b.isMinus)
+    , length(b.length)
+    , capacity(b.capacity)
 {
     _SafeNewSpace(data, capacity);
     memcpy(data, b.data, sizeof(unsigned int) * capacity);
 }
 
-Bint::Bint(Bint &&b) noexcept
-    : isMinus(b.isMinus), length(b.length), capacity(b.capacity)
+Bint::Bint(Bint&& b) noexcept
+    : isMinus(b.isMinus)
+    , length(b.length)
+    , capacity(b.capacity)
 {
     data = b.data;
     b.data = nullptr;
 }
 
-Bint &Bint::operator=(int x)
+Bint& Bint::operator=(int x)
 {
     memset(data, 0, sizeof(unsigned int) * capacity);
     length = 0;
@@ -208,7 +219,7 @@ Bint &Bint::operator=(int x)
     return *this;
 }
 
-Bint &Bint::operator=(long long x)
+Bint& Bint::operator=(long long x)
 {
     memset(data, 0, sizeof(unsigned int) * capacity);
     length = 0;
@@ -226,7 +237,7 @@ Bint &Bint::operator=(long long x)
     return *this;
 }
 
-Bint &Bint::operator=(const Bint &rhs)
+Bint& Bint::operator=(const Bint& rhs)
 {
     if (this == &rhs) {
         return *this;
@@ -241,7 +252,7 @@ Bint &Bint::operator=(const Bint &rhs)
     return *this;
 }
 
-Bint &Bint::operator=(Bint &&rhs) noexcept
+Bint& Bint::operator=(Bint&& rhs) noexcept
 {
     if (this == &rhs) {
         return *this;
@@ -254,7 +265,7 @@ Bint &Bint::operator=(Bint &&rhs) noexcept
     return *this;
 }
 
-std::istream &operator>>(std::istream &is, Bint &b)
+std::istream& operator>>(std::istream& is, Bint& b)
 {
     std::string s;
     is >> s;
@@ -262,7 +273,7 @@ std::istream &operator>>(std::istream &is, Bint &b)
     return is;
 }
 
-std::ostream &operator<<(std::ostream &os, const Bint &b)
+std::ostream& operator<<(std::ostream& os, const Bint& b)
 {
     if (b.data == nullptr) {
         return os;
@@ -277,20 +288,20 @@ std::ostream &operator<<(std::ostream &os, const Bint &b)
     return os;
 }
 
-Bint abs(const Bint &b)
+Bint abs(const Bint& b)
 {
     Bint result(b);
     result.isMinus = false;
     return result;
 }
 
-Bint abs(Bint &&b)
+Bint abs(Bint&& b)
 {
     b.isMinus = false;
     return b;
 }
 
-bool operator==(const Bint &lhs, const Bint &rhs)
+bool operator==(const Bint& lhs, const Bint& rhs)
 {
     if (lhs.isMinus != rhs.isMinus) {
         return false;
@@ -306,7 +317,7 @@ bool operator==(const Bint &lhs, const Bint &rhs)
     return true;
 }
 
-bool operator!=(const Bint &lhs, const Bint &rhs)
+bool operator!=(const Bint& lhs, const Bint& rhs)
 {
     if (lhs.isMinus != rhs.isMinus) {
         return true;
@@ -322,7 +333,7 @@ bool operator!=(const Bint &lhs, const Bint &rhs)
     return false;
 }
 
-bool operator<(const Bint &lhs, const Bint &rhs)
+bool operator<(const Bint& lhs, const Bint& rhs)
 {
     if (lhs.isMinus != rhs.isMinus) {
         return !lhs.isMinus;
@@ -350,12 +361,12 @@ bool operator<(const Bint &lhs, const Bint &rhs)
     }
 }
 
-bool operator>(const Bint &lhs, const Bint &rhs)
+bool operator>(const Bint& lhs, const Bint& rhs)
 {
     return rhs < lhs;
 }
 
-bool operator<=(const Bint &lhs, const Bint &rhs)
+bool operator<=(const Bint& lhs, const Bint& rhs)
 {
     if (lhs.isMinus != rhs.isMinus) {
         return !lhs.isMinus;
@@ -383,7 +394,7 @@ bool operator<=(const Bint &lhs, const Bint &rhs)
     }
 }
 
-bool operator>=(const Bint &lhs, const Bint &rhs)
+bool operator>=(const Bint& lhs, const Bint& rhs)
 {
     if (lhs.isMinus != rhs.isMinus) {
         return lhs.isMinus;
@@ -411,8 +422,7 @@ bool operator>=(const Bint &lhs, const Bint &rhs)
     }
 }
 
-
-Bint operator+(const Bint &lhs, const Bint &rhs)
+Bint operator+(const Bint& lhs, const Bint& rhs)
 {
     if (lhs.isMinus == rhs.isMinus) {
         size_t maxLen = std::max(lhs.length, rhs.length);
@@ -439,20 +449,20 @@ Bint operator+(const Bint &lhs, const Bint &rhs)
     }
 }
 
-Bint operator-(const Bint &b)
+Bint operator-(const Bint& b)
 {
     Bint result(b);
     result.isMinus = !result.isMinus;
     return result;
 }
 
-Bint operator-(Bint &&b)
+Bint operator-(Bint&& b)
 {
     b.isMinus = !b.isMinus;
     return b;
 }
 
-Bint operator-(const Bint &lhs, const Bint &rhs)
+Bint operator-(const Bint& lhs, const Bint& rhs)
 {
     if (lhs.isMinus == rhs.isMinus) {
         if (lhs.isMinus) {
@@ -481,7 +491,7 @@ Bint operator-(const Bint &lhs, const Bint &rhs)
     }
 }
 
-Bint operator*(const Bint &lhs, const Bint &rhs)
+Bint operator*(const Bint& lhs, const Bint& rhs)
 {
     size_t expectLen = lhs.length + rhs.length + 2;
     Bint result(expectLen);
@@ -496,7 +506,7 @@ Bint operator*(const Bint &lhs, const Bint &rhs)
             }
         }
     }
-    result.length = lhs.length + rhs.length -1;
+    result.length = lhs.length + rhs.length - 1;
     while (result.data[result.length] > 0) {
         ++result.length;
     }

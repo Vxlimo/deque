@@ -9,7 +9,7 @@
 namespace sjtu {
 template <class T>
 class double_list {
-public:
+private:
     /**
      * the nodes of double_list
      */
@@ -31,6 +31,7 @@ public:
     Node *head, *tail;
     size_t sz;
 
+public:
     /**
      * constructors and destructors
      * here we denote tail as a node points to nothing
@@ -68,9 +69,13 @@ public:
      */
     class const_iterator;
     class iterator {
-    public:
+        friend double_list;
+
+    protected:
         Node* p;
         const double_list<T>* base;
+
+    public:
         iterator(Node* p = nullptr, const double_list<T>* base = nullptr)
             : p(p)
             , base(base)
@@ -190,6 +195,8 @@ public:
         }
     };
     class const_iterator : public iterator {
+        friend double_list;
+
     public:
         const_iterator() = default;
         const_iterator(Node* p = nullptr, const double_list<T>* base = nullptr)
@@ -501,13 +508,16 @@ public:
 };
 template <class T>
 class deque {
-public:
+private:
     double_list<double_list<T>>* block;
     size_t length, sz;
 
+public:
     class const_iterator;
     class iterator {
-    public:
+        friend deque;
+
+    protected:
         /**
          * add data members.
          * just add whatever you want.
@@ -515,6 +525,8 @@ public:
         typename double_list<double_list<T>>::iterator block_it;
         typename double_list<T>::iterator list_it;
         const deque* base;
+
+    public:
         iterator() = default;
         iterator(typename double_list<double_list<T>>::iterator block_it, typename double_list<T>::iterator list_it, const deque* base)
             : block_it(block_it)
@@ -718,6 +730,8 @@ public:
     };
 
     class const_iterator : public iterator {
+        friend deque;
+
     public:
         const_iterator() = default;
         const_iterator(const iterator& t)
